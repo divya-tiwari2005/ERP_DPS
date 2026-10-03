@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model academicclass {
+  id        Int      @id @default(autoincrement())
+  name      String
+  schoolId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  school            school               @relation(fields: [schoolId], references: [id], map: "AcademicClass_schoolId_fkey")
+  section           section[]
+  calendareventclass calendareventclass[]
+
+  @@unique([schoolId, name], map: "AcademicClass_schoolId_name_key")
+  @@index([schoolId], map: "AcademicClass_schoolId_idx")
+}
+
+model academicyear {
+  id             Int      @id @default(autoincrement())
+  schoolId       Int
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+
+  school         school          @relation(fields: [schoolId], references: [id], map: "AcademicYear_schoolId_fkey")
+  schoolcalendar schoolcalendar[]
+  calendarevent  calendarevent[]
+
+  @@unique([schoolId, name], map: "AcademicYear_schoolId_name_key")
+  @@index([schoolId], map: "AcademicYear_schoolId_idx")
+}
+
+model attendance {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  date      DateTime
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  student student @relation(fields: [studentId], references: [id], map: "Attendance_studentId_fkey")
+
+  @@unique([studentId, date], map: "Attendance_studentId_date_key")
+  @@index([studentId, date], map: "Attendance_studentId_date_idx")
+}
+
+model school {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique(map: "School_code_key")
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  academicclass   academicclass[]
+  academicyear    academicyear[]
+  schoolcalendar  schoolcalendar[]
+  student         student[]
+  schoolworkingday schoolworkingday[]
+  calendarevent   calendarevent[]
+  schoolsaturday schoolsaturday[]
+}
+
+model schoolcalendar {
+  id             Int      @id @default(autoincrement())
+  schoolId       Int
+  date           DateTime
+  title          String
+  type           String
+  status         String   @default("HOLIDAY")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+  academicYearId Int
+
+  academicyear academicyear @relation(fields: [academicYearId], references: [id], map: "SchoolCalendar_academicYearId_fkey")
+  school       school       @relation(fields: [schoolId], references: [id], map: "SchoolCalendar_schoolId_fkey")
+
+  @@unique([schoolId, date], map: "SchoolCalendar_schoolId_date_key")
+  @@index([academicYearId, date], map: "SchoolCalendar_academicYearId_date_idx")
+  @@index([schoolId, date], map: "SchoolCalendar_schoolId_date_idx")
+}
+
+model section {
+  id            Int      @id @default(autoincrement())
+  name          String
+  classId       Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+
+  academicclass academicclass @relation(fields: [classId], references: [id], map: "Section_classId_fkey")
+  student       student[]
+
+  @@unique([classId, name], map: "Section_classId_name_key")
+  @@index([classId], map: "Section_classId_idx")
+}
+
+model student {
+  id              Int      @id @default(autoincrement())
+  studentId       String   @unique(map: "Student_studentId_key")
+  name            String
+  email           String   @unique(map: "Student_email_key")
+  phone           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  schoolId        Int?
+  sectionId       Int?
+  profileImageUrl String?
+
+  attendance attendance[]
+  school     school?     @relation(fields: [schoolId], references: [id], map: "Student_schoolId_fkey")
+  section    section?    @relation(fields: [sectionId], references: [id], map: "Student_sectionId_fkey")
+  user       user?
+
+  @@index([schoolId], map: "Student_schoolId_idx")
+  @@index([sectionId], map: "Student_sectionId_idx")
+}
+
+model user {
+  id           Int      @id @default(autoincrement())
+  loginId      String   @unique(map: "User_loginId_key")
+  passwordHash String
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  studentId    Int?     @unique(map: "User_studentId_key")
+
+  student student? @relation(fields: [studentId], references: [id], map: "User_studentId_fkey")
+}
+
+model schoolworkingday {
+  id              Int      @id @default(autoincrement())
+  schoolId        Int
+  dayOfWeek       Int
+  isWorking       Boolean  @default(true)
+  saturdayPattern String   @default("ALL_WORKING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+
+  school school @relation(fields: [schoolId], references: [id])
+
+  @@unique([schoolId, dayOfWeek])
+  @@index([schoolId])
+}
+
+model calendarevent {
+  id             Int      @id @default(autoincrement())
+  schoolId       Int
+  academicYearId Int
+  title          String
+  type           String
+  targetType     String   @default("ALL_CLASSES")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+
+  school       school               @relation(fields: [schoolId], references: [id])
+  academicyear academicyear         @relation(fields: [academicYearId], references: [id])
+  dates        calendareventdate[]
+  classes      calendareventclass[]
+
+  @@index([schoolId])
+  @@index([academicYearId])
+}
+
+model calendareventdate {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  event calendarevent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, date])
+  @@index([date])
+}
+
+model calendareventclass {
+  eventId Int
+  classId Int
+
+  event         calendarevent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  academicclass academicclass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, classId])
+  @@index([classId])
+}
+model schoolsaturday {
+  id        Int      @id @default(autoincrement())
+  schoolId  Int
+  date      DateTime
+  isWorking Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  school school @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, date])
+  @@index([schoolId, date])
+}
