@@ -1,15 +1,15 @@
 import express from "express";
 import cors from "cors";
-
 import authRoutes from "./routes/authRoute.js";
 import studentRoutes from "./routes/studentRoute.js";
 import attendanceRoutes from "./routes/attendanceRoute.js";
 import calendarRoutes from "./routes/calendarRoute.js";
+import timetableRoutes from "./routes/timetableRoutes.js";
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); 
 
 app.get("/", (req, res) => {
   res.json({
@@ -28,6 +28,9 @@ app.use("/attendance", attendanceRoutes);
 
 // Calendar routes
 app.use("/calendar", calendarRoutes);
+
+// Timetable routes
+app.use("/timetable", timetableRoutes);
 
 const PORT = 3000;
 

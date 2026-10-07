@@ -6,6 +6,9 @@ import {
 } from "../services/authService.js";
 
 export const login = async (req, res) => {
+  console.log("LOGIN REQUEST:");
+  console.log("Content-Type:", req.headers["content-type"]);
+  console.log("Body:", req.body);
   try {
     const { loginId, password } = req.body;
 

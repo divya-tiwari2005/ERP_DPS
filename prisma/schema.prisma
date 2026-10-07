@@ -14,8 +14,8 @@ model academicclass {
   createdAt DateTime @default(now())
   updatedAt DateTime
 
-  school            school               @relation(fields: [schoolId], references: [id], map: "AcademicClass_schoolId_fkey")
-  section           section[]
+  school             school               @relation(fields: [schoolId], references: [id], map: "AcademicClass_schoolId_fkey")
+  section            section[]
   calendareventclass calendareventclass[]
 
   @@unique([schoolId, name], map: "AcademicClass_schoolId_name_key")
@@ -23,18 +23,19 @@ model academicclass {
 }
 
 model academicyear {
-  id             Int      @id @default(autoincrement())
-  schoolId       Int
-  name           String
-  startDate      DateTime
-  endDate        DateTime
-  status         String   @default("ACTIVE")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime
+  id        Int      @id @default(autoincrement())
+  schoolId  Int
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime
 
-  school         school          @relation(fields: [schoolId], references: [id], map: "AcademicYear_schoolId_fkey")
+  school         school           @relation(fields: [schoolId], references: [id], map: "AcademicYear_schoolId_fkey")
   schoolcalendar schoolcalendar[]
   calendarevent  calendarevent[]
+  timetable      timetable[]
 
   @@unique([schoolId, name], map: "AcademicYear_schoolId_name_key")
   @@index([schoolId], map: "AcademicYear_schoolId_idx")
@@ -62,13 +63,13 @@ model school {
   createdAt DateTime @default(now())
   updatedAt DateTime
 
-  academicclass   academicclass[]
-  academicyear    academicyear[]
-  schoolcalendar  schoolcalendar[]
-  student         student[]
+  academicclass    academicclass[]
+  academicyear     academicyear[]
+  schoolcalendar   schoolcalendar[]
+  student          student[]
   schoolworkingday schoolworkingday[]
-  calendarevent   calendarevent[]
-  schoolsaturday schoolsaturday[]
+  calendarevent    calendarevent[]
+  schoolsaturday   schoolsaturday[]
 }
 
 model schoolcalendar {
@@ -91,14 +92,15 @@ model schoolcalendar {
 }
 
 model section {
-  id            Int      @id @default(autoincrement())
-  name          String
-  classId       Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime
+  id        Int      @id @default(autoincrement())
+  name      String
+  classId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime
 
   academicclass academicclass @relation(fields: [classId], references: [id], map: "Section_classId_fkey")
   student       student[]
+  timetable     timetable[]
 
   @@unique([classId, name], map: "Section_classId_name_key")
   @@index([classId], map: "Section_classId_idx")
@@ -117,8 +119,8 @@ model student {
   profileImageUrl String?
 
   attendance attendance[]
-  school     school?     @relation(fields: [schoolId], references: [id], map: "Student_schoolId_fkey")
-  section    section?    @relation(fields: [sectionId], references: [id], map: "Student_sectionId_fkey")
+  school     school?      @relation(fields: [schoolId], references: [id], map: "Student_schoolId_fkey")
+  section    section?     @relation(fields: [sectionId], references: [id], map: "Student_sectionId_fkey")
   user       user?
 
   @@index([schoolId], map: "Student_schoolId_idx")
@@ -193,6 +195,7 @@ model calendareventclass {
   @@id([eventId, classId])
   @@index([classId])
 }
+
 model schoolsaturday {
   id        Int      @id @default(autoincrement())
   schoolId  Int
@@ -205,4 +208,25 @@ model schoolsaturday {
 
   @@unique([schoolId, date])
   @@index([schoolId, date])
+}
+
+model timetable {
+  id             Int      @id @default(autoincrement())
+  sectionId      Int
+  academicYearId Int
+  dayOfWeek      Int
+  periodNumber   Int
+  startTime      String
+  endTime        String
+  title          String
+  type           String   @default("SUBJECT")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  section      section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  academicyear academicyear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, academicYearId, dayOfWeek, periodNumber])
+  @@index([sectionId, academicYearId])
+  @@index([academicYearId])
 }
