@@ -5,6 +5,8 @@ import studentRoutes from "./routes/studentRoute.js";
 import attendanceRoutes from "./routes/attendanceRoute.js";
 import calendarRoutes from "./routes/calendarRoute.js";
 import timetableRoutes from "./routes/timetableRoutes.js";
+import homeworkRoutes from "./routes/homeworkRoute.js";
+import subjectRoutes from "./routes/subjectRoutes.js";
 
 const app = express();
 
@@ -31,6 +33,12 @@ app.use("/calendar", calendarRoutes);
 
 // Timetable routes
 app.use("/timetable", timetableRoutes);
+
+// Homework routes
+app.use("/homework", homeworkRoutes);
+
+// Subject routes
+app.use("/subjects", subjectRoutes);
 
 const PORT = 3000;
 

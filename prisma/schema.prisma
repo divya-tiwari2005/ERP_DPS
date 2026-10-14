@@ -17,6 +17,7 @@ model academicclass {
   school             school               @relation(fields: [schoolId], references: [id], map: "AcademicClass_schoolId_fkey")
   section            section[]
   calendareventclass calendareventclass[]
+  classSubjects      classsubject[]
 
   @@unique([schoolId, name], map: "AcademicClass_schoolId_name_key")
   @@index([schoolId], map: "AcademicClass_schoolId_idx")
@@ -36,6 +37,8 @@ model academicyear {
   schoolcalendar schoolcalendar[]
   calendarevent  calendarevent[]
   timetable      timetable[]
+  homework       homework[]
+  syllabi        syllabus[]
 
   @@unique([schoolId, name], map: "AcademicYear_schoolId_name_key")
   @@index([schoolId], map: "AcademicYear_schoolId_idx")
@@ -70,6 +73,8 @@ model school {
   schoolworkingday schoolworkingday[]
   calendarevent    calendarevent[]
   schoolsaturday   schoolsaturday[]
+  homework         homework[]
+  subjects         schoolsubject[]
 }
 
 model schoolcalendar {
@@ -101,6 +106,7 @@ model section {
   academicclass academicclass @relation(fields: [classId], references: [id], map: "Section_classId_fkey")
   student       student[]
   timetable     timetable[]
+  homework      homework[]
 
   @@unique([classId, name], map: "Section_classId_name_key")
   @@index([classId], map: "Section_classId_idx")
@@ -229,4 +235,122 @@ model timetable {
   @@unique([sectionId, academicYearId, dayOfWeek, periodNumber])
   @@index([sectionId, academicYearId])
   @@index([academicYearId])
+}
+
+model homework {
+  id             Int @id @default(autoincrement())
+  schoolId       Int
+  sectionId      Int
+  academicYearId Int
+
+  subject      String
+  title        String
+  description  String?
+  assignedDate DateTime
+  dueDate      DateTime?
+  status       String    @default("ACTIVE")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school       school       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  section      section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  academicyear academicyear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, sectionId, academicYearId])
+  @@index([sectionId, academicYearId, assignedDate])
+  @@index([academicYearId])
+}
+
+model schoolsubject {
+  id        Int      @id @default(autoincrement())
+  schoolId  Int
+  name      String
+  code      String?
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school        school         @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classSubjects classsubject[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+}
+
+model classsubject {
+  id        Int      @id @default(autoincrement())
+  classId   Int
+  subjectId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  academicclass academicclass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject       schoolsubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  syllabi       syllabus[]
+
+  @@unique([classId, subjectId])
+  @@index([subjectId])
+}
+
+model syllabus {
+  id             Int      @id @default(autoincrement())
+  classSubjectId Int
+  academicYearId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  classSubject     classsubject      @relation(fields: [classSubjectId], references: [id], onDelete: Cascade)
+  academicYear     academicyear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  units            syllabusunit[]
+  syllabuschapters syllabuschapter[]
+
+  @@unique([classSubjectId, academicYearId])
+  @@index([academicYearId])
+}
+
+model syllabusunit {
+  id         Int      @id @default(autoincrement())
+  syllabusId Int
+  title      String
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  syllabus syllabus          @relation(fields: [syllabusId], references: [id], onDelete: Cascade)
+  chapters syllabuschapter[]
+
+  @@index([syllabusId, position])
+}
+
+model syllabuschapter {
+  id         Int      @id @default(autoincrement())
+  unitId     Int?
+  syllabusId Int
+  title      String
+  position   Int      @default(0)
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  unit     syllabusunit?   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  syllabus syllabus        @relation(fields: [syllabusId], references: [id], onDelete: Cascade)
+  topics   syllabustopic[]
+
+  @@index([syllabusId, position])
+  @@index([unitId, position])
+  @@index([status])
+}
+
+model syllabustopic {
+  id        Int      @id @default(autoincrement())
+  chapterId Int
+  title     String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chapter syllabuschapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@index([chapterId, position])
 }
