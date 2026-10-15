@@ -7,6 +7,7 @@ import calendarRoutes from "./routes/calendarRoute.js";
 import timetableRoutes from "./routes/timetableRoutes.js";
 import homeworkRoutes from "./routes/homeworkRoute.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
+import syllabusRoutes from "./routes/syllabusRoutes.js";
 
 const app = express();
 
@@ -39,6 +40,9 @@ app.use("/homework", homeworkRoutes);
 
 // Subject routes
 app.use("/subjects", subjectRoutes);
+
+// Syllabus routes
+app.use("/syllabus", syllabusRoutes);
 
 const PORT = 3000;
 
