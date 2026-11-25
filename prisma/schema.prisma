@@ -7,6 +7,26 @@ datasource db {
   provider = "mysql"
 }
 
+enum ExamDateSheetType {
+  MANUAL
+  PDF
+}
+
+enum ExamDateSheetStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ResultTerm {
+  TERM_1
+  TERM_2
+}
+
+enum ResultStatus {
+  DRAFT
+  PUBLISHED
+}
+
 model academicclass {
   id        Int      @id @default(autoincrement())
   name      String
@@ -18,6 +38,9 @@ model academicclass {
   section            section[]
   calendareventclass calendareventclass[]
   classSubjects      classsubject[]
+  examdatesheets     examdatesheet[]
+  results result[]
+  resultComponentConfigs resultcomponentconfig[]
 
   @@unique([schoolId, name], map: "AcademicClass_schoolId_name_key")
   @@index([schoolId], map: "AcademicClass_schoolId_idx")
@@ -39,6 +62,9 @@ model academicyear {
   timetable      timetable[]
   homework       homework[]
   syllabi        syllabus[]
+  examdatesheets examdatesheet[]
+  results result[]
+  resultComponentConfigs resultcomponentconfig[]
 
   @@unique([schoolId, name], map: "AcademicYear_schoolId_name_key")
   @@index([schoolId], map: "AcademicYear_schoolId_idx")
@@ -75,6 +101,9 @@ model school {
   schoolsaturday   schoolsaturday[]
   homework         homework[]
   subjects         schoolsubject[]
+  examdatesheets   examdatesheet[]
+  results result[]
+  resultComponentConfigs resultcomponentconfig[]
 }
 
 model schoolcalendar {
@@ -107,6 +136,7 @@ model section {
   student       student[]
   timetable     timetable[]
   homework      homework[]
+  results result[]
 
   @@unique([classId, name], map: "Section_classId_name_key")
   @@index([classId], map: "Section_classId_idx")
@@ -124,6 +154,7 @@ model student {
   sectionId       Int?
   profileImageUrl String?
 
+  results result[]
   attendance attendance[]
   school     school?      @relation(fields: [schoolId], references: [id], map: "Student_schoolId_fkey")
   section    section?     @relation(fields: [sectionId], references: [id], map: "Student_sectionId_fkey")
@@ -285,9 +316,11 @@ model classsubject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  academicclass academicclass @relation(fields: [classId], references: [id], onDelete: Cascade)
-  subject       schoolsubject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  syllabi       syllabus[]
+  academicclass         academicclass          @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject               schoolsubject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  syllabi               syllabus[]
+  examdatesheetsubjects examdatesheetsubject[]
+  resultSubjects resultsubject[]
 
   @@unique([classId, subjectId])
   @@index([subjectId])
@@ -353,4 +386,135 @@ model syllabustopic {
   chapter syllabuschapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@index([chapterId, position])
+}
+
+model examdatesheet {
+  id             Int                 @id @default(autoincrement())
+  schoolId       Int
+  academicYearId Int
+  classId        Int
+  examName       String
+  creationType   ExamDateSheetType
+  pdfUrl         String?
+  status         ExamDateSheetStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  school        school                 @relation(fields: [schoolId], references: [id])
+  academicyear  academicyear           @relation(fields: [academicYearId], references: [id])
+  academicclass academicclass          @relation(fields: [classId], references: [id])
+  subjects      examdatesheetsubject[]
+
+  @@unique([schoolId, academicYearId, classId, examName])
+  @@index([schoolId, academicYearId, classId, status])
+}
+
+model examdatesheetsubject {
+  id             Int      @id @default(autoincrement())
+  dateSheetId    Int
+  classSubjectId Int
+  examDate       DateTime @db.Date
+  startTime      String
+  endTime        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  dateSheet    examdatesheet @relation(fields: [dateSheetId], references: [id], onDelete: Cascade)
+  classSubject classsubject  @relation(fields: [classSubjectId], references: [id])
+
+  @@unique([dateSheetId, classSubjectId])
+  @@index([dateSheetId, examDate])
+}
+
+model result {
+  id             Int          @id @default(autoincrement())
+  schoolId       Int
+  studentId      Int
+  academicYearId Int
+  classId        Int
+  sectionId      Int
+  term           ResultTerm
+  totalObtained  Decimal      @default(0) @db.Decimal(8, 2)
+  totalMaximum   Decimal      @default(0) @db.Decimal(8, 2)
+  percentage     Decimal      @default(0) @db.Decimal(6, 2)
+  gpa            Decimal?     @db.Decimal(4, 2)
+  status         ResultStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  school        school        @relation(fields: [schoolId], references: [id])
+  student       student       @relation(fields: [studentId], references: [id])
+  academicyear  academicyear  @relation(fields: [academicYearId], references: [id])
+  academicclass academicclass @relation(fields: [classId], references: [id])
+  section       section       @relation(fields: [sectionId], references: [id])
+  subjects      resultsubject[]
+
+  @@unique([studentId, academicYearId, term])
+  @@index([schoolId, academicYearId, classId, sectionId, term])
+  @@index([studentId, academicYearId])
+}
+
+model resultsubject {
+  id             Int      @id @default(autoincrement())
+  resultId       Int
+  classSubjectId Int
+
+  totalMarks     Decimal  @default(0) @db.Decimal(8, 2)
+  maximumMarks   Decimal  @default(0) @db.Decimal(8, 2)
+  percentage     Decimal  @default(0) @db.Decimal(6, 2)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  result         result       @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  classSubject   classsubject @relation(fields: [classSubjectId], references: [id])
+  componentMarks resultcomponentmarks[]
+
+  @@unique([resultId, classSubjectId])
+  @@index([classSubjectId])
+}
+model resultcomponentconfig {
+  id             Int        @id @default(autoincrement())
+  schoolId       Int
+  academicYearId Int
+  classId        Int
+  term           ResultTerm
+
+  code           String
+  name           String
+  maximumMarks   Decimal    @db.Decimal(6, 2)
+  displayOrder   Int        @default(0)
+  isActive       Boolean    @default(true)
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  school         school        @relation(fields: [schoolId], references: [id])
+  academicyear   academicyear  @relation(fields: [academicYearId], references: [id])
+  academicclass  academicclass @relation(fields: [classId], references: [id])
+
+  componentMarks resultcomponentmarks[]
+
+  @@unique([schoolId, academicYearId, classId, term, code])
+  @@index([schoolId, academicYearId, classId, term])
+}
+model resultcomponentmarks {
+  id                 Int      @id @default(autoincrement())
+  resultSubjectId    Int
+  componentConfigId  Int
+
+  componentName      String
+  obtainedMarks      Decimal  @db.Decimal(6, 2)
+  maximumMarks       Decimal  @db.Decimal(6, 2)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  resultSubject      resultsubject          @relation(fields: [resultSubjectId], references: [id], onDelete: Cascade)
+  componentConfig    resultcomponentconfig  @relation(fields: [componentConfigId], references: [id], onDelete: Restrict)
+
+  @@unique([resultSubjectId, componentConfigId])
+  @@index([componentConfigId])
 }

@@ -65,7 +65,7 @@ export const getMyHomework = async (userId) => {
         assignedDate: "desc",
       },
       {
-        dueDate: "asc",
+        dueDate: "asc", 
       },
     ],
     select: {
@@ -90,6 +90,7 @@ export const getMyHomework = async (userId) => {
     homework,
   };
 };
+
 export const createHomework = async (data) => {
   const {
     schoolId,

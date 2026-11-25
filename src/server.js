@@ -8,11 +8,13 @@ import timetableRoutes from "./routes/timetableRoutes.js";
 import homeworkRoutes from "./routes/homeworkRoute.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import syllabusRoutes from "./routes/syllabusRoutes.js";
+import examRoutes from "./routes/examRoutes.js";
+import resultComponentRoutes from "./routes/resultComponentRoutes.js";
 
 const app = express();
 
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.json({
@@ -43,6 +45,12 @@ app.use("/subjects", subjectRoutes);
 
 // Syllabus routes
 app.use("/syllabus", syllabusRoutes);
+
+// Exam routes
+app.use("/exams", examRoutes);
+
+// Result component routes
+app.use("/result-components", resultComponentRoutes);
 
 const PORT = 3000;
 

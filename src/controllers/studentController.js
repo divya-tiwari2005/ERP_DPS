@@ -82,7 +82,7 @@ export const getMySubjects = async (req, res) => {
       },
       include: {
         subject: true,
-        syllabi: {
+        syllabi: { 
           where: {
             academicYear: {
               schoolId: student.schoolId,
@@ -110,17 +110,18 @@ export const getMySubjects = async (req, res) => {
       class: student.section.academicclass.name,
       section: student.section.name,
       subjects: subjects.map((item) => ({
-        id: item.subject.id,
-        name: item.subject.name,
-        code: item.subject.code,
-        category: item.subject.category,
-        syllabus: item.syllabi[0]
-          ? {
-              id: item.syllabi[0].id,
-              academicYear: item.syllabi[0].academicYear,
-            }
-          : null,
-      })),
+  id: item.subject.id,
+  classSubjectId: item.id,
+  name: item.subject.name,
+  code: item.subject.code,
+  category: item.subject.category,
+  syllabus: item.syllabi[0]
+    ? {
+        id: item.syllabi[0].id,
+        academicYear: item.syllabi[0].academicYear,
+      }
+    : null,
+})),
     });
   } catch (error) {
     console.error("Get student subjects error:", error);
